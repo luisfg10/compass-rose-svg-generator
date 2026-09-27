@@ -1,0 +1,17 @@
+[project]
+name = "compass-rose-svg-generator"
+version = "0.1.0"
+description = "Compass rose SVG generator in Python."
+readme = "README.md"
+authors = [
+    { name = "luisfg10", email = "luisf.gonzalezv@yahoo.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+compass-rose-svg-generator = "compass_rose_svg_generator:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
