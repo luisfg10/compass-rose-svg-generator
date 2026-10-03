@@ -63,3 +63,14 @@ class Array:
                 "Expected int, float or list."
                 )
 
+    def __add__(self, other: Array | int | float) -> Array:
+        """Add an Array element (left) to other (right)."""
+        pass
+
+    def __radd__(self, other:  Array | int | float) -> Array:
+        """
+        Addition rules for when an `Array` element is to the right
+        of an operation. Simply defaults to the default behavior of
+        __add__.
+        """
+        return self.__add__(other)
