@@ -73,9 +73,15 @@ class Array:
         """
         Defines behavior for Array + other.
 
+        Notes
+        -----
         Uses broadcasting only in the case of Array + int | float.
         For Array + Array situations, each instance must have the same shape
-        for the operation to be valid.        
+        for the operation to be valid.
+
+        __radd__ is intentionally not defined: there's no meaning
+        for, say 2 + [2, 1], as it assumes the element on the left "receives"
+        the one on the right.      
         """
         # Array + scalar
         if isinstance(other, (int | float)):
@@ -90,10 +96,9 @@ class Array:
                    for dimension in self.object
                    for element in dimension
                 ]
-                return Array([
-                    [result[0], result[1]],
-                    [result[2], result[3]]
-                ])
+                return Array(
+                    self._nest_flattened_matrix(result)
+                )
 
         # Array + Array
         elif isinstance(other, Array):
@@ -116,27 +121,64 @@ class Array:
                     for i in range(0, 2)
                     for j in range(0, 2)
                 ]
-                return Array([
-                    [result[0], result[1]],
-                    [result[2], result[3]]
-                ])                
+                return Array(
+                    self._nest_flattened_matrix(result)
+                )                
+        raise TypeError(
+            "Addition/substraction operation not supported "
+            f"between Array and {type(other)}."
+        )
+
+
+
+    def __sub__(self, other: Array | int | float) -> Array:
+        """
+        Defines behavior for self - other.
+
+        Notes
+        -----
+        __rsub__ is intentionally not defined, for the same reason as
+        exposed for self.__radd__ in the __doc__ notes for self.__add__.
+        
+        """
+        if isinstance(other, (int, float, Array)):
+            other *= (-1)
+            return self.__add__(other)
         return NotImplemented
 
-    def __radd__(self, other:  Array | int | float) -> Array:
-        """
-        Defines behavior for other + Array,
-        in case other.__add__ returns NotImplemented.
+    def __mul__(self, other):
+        """Defines behavior for Array * other."""
+        if isinstance(other, (int | float)):
+            if self.object_type == "vector":
+                return Array([
+                    element * other
+                    for element in self.object
+                ])
+            elif self.object_type == "matrix":
+                result = [
+                    element * other
+                    for dimension in self.object
+                    for element in dimension
+                ]
+                return Array(
+                    self._nest_flattened_matrix(result)
+                )
+        return NotImplemented
 
-        Simply defaults to self.__add__.
-        """
-        return self.__add__(other)
-
-    def __sub__(self, other):
-        pass
-
-    def __rsub__(self, other):
+    def __rmul__(self, other):
         pass
 
     def __str__(self):
         """Defines behavior when printing a class instance."""
         return str(self.object)
+
+    @staticmethod
+    def _nest_flattened_matrix(
+        flattened_array: list[int | float]) -> list[list[int | float]]:
+        """Simplify common operation: go from
+        [x_11, x_12, x_21, x_22] -> [[x_11, x_12], [x_21, x_22]]
+        """
+        return [
+            [flattened_array[0], flattened_array[1]],
+            [flattened_array[2], flattened_array[3]]
+        ]
