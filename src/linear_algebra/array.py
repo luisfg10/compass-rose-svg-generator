@@ -1,6 +1,13 @@
 class Array:
-    """Base abstraction for doing matrix and vector operations in 2D."""
+    """
+    Base abstraction for doing matrix and vector operations in 2D.
 
+    TODO: Improve degree of abstraction to handle matrix addition,
+    substraction and multiplication in arbitrary n by m dimensions. Currently
+    only supports (1, 2) and (2, 2) matrices.
+    TODO: Improve degree of generalization to avoid manually typing the
+    solution for specific cases, as it doesn't scale for arbitrary dimensions.
+    """
     def __init__(self, array: list[float | int | list[float | int]]) -> None:
         """
         Initialize a matrix or vector inside an array as an `Array` instance.
@@ -18,6 +25,12 @@ class Array:
         In a 2D matrix, elements are treated as [[x_11, x_12], [x_13, x_14]], where
         the first element of the index is the row number and the second is the column
         number. Conversely, on a vector they're treated as [x_11, x_12].
+
+        TODO: Even if nested lists are the correct way to display matrices to users,
+        they cause friction with vectors, which are not nested inside lists.
+        For consistency and better generalization of operations, either nest all
+        objects internally or none. The __str__ method can be adapted to separate
+        the internal representation of objects vs. the way they're displayed. 
         """
         # Basic input validity checks
         if not isinstance(array, list):
@@ -129,8 +142,6 @@ class Array:
             f"between Array and {type(other)}."
         )
 
-
-
     def __sub__(self, other: Array | int | float) -> Array:
         """
         Defines behavior for self - other.
@@ -147,7 +158,28 @@ class Array:
         return NotImplemented
 
     def __mul__(self, other):
-        """Defines behavior for Array * other."""
+        """
+        Defines behavior for Array * other.
+
+        Notes
+        -----
+        Follows rules for matrix multiplication:
+            * The number of columns of the first element must
+            match the number of rows of the second
+            * If A is an n by m matrix and b is p by q, then their
+            product C is n by q. C_ij is the result of the dot product
+            of row i from matrix A and column J from matrix B.
+            Applied to the current scope, this means:
+            >> Vector (1, 2) * Matrix (2, 2) -> Vector (1, 2)
+            >> Matrix (2, 2) * Matrix (2, 2) -> Matrix (2, 2)
+            >> Matrix (2, 2) * Vector (1, 2) -> Matrix (2, 2)
+            >> Vector (1, 2) * Vector (1, 2) -> Invalid
+
+        Multiplying by a scalar broadcasts to each matrix element individually.
+        Following the convention for addition and substraction,
+        __rmul__ is intentionally not defined.
+        """
+        # Multiplication by scalar
         if isinstance(other, (int | float)):
             if self.object_type == "vector":
                 return Array([
@@ -163,6 +195,33 @@ class Array:
                 return Array(
                     self._nest_flattened_matrix(result)
                 )
+
+        # Array * Array
+        elif isinstance(other, Array):
+            # Vector * Vector
+            if (
+                self.object_type == "vector"
+                and other.object_type == "vector"
+            ):
+                raise ValueError(
+                    "Invalid operation: multiplication between two "
+                    "vectors not supported."
+                )
+
+            # Vector (1, 2) * Matrix (2, 2) -> Vector (1, 2)
+            # e.g., [1, 0] * [[1, 1], [2, 0]] -> [1, 1]
+            if (
+                self.object_type == "vector"
+                and other.object_type == "matrix"
+            ):
+                result = [
+                    self.object[i] * other.object[i][j]
+                    for i in range(0, 2)
+                    for j in range(0, 2)
+                ]
+                
+    
+        
         return NotImplemented
 
     def __rmul__(self, other):
@@ -170,7 +229,7 @@ class Array:
 
     def __str__(self):
         """Defines behavior when printing a class instance."""
-        return str(self.object)
+        return str(self.object)  # self.object is a list so this works
 
     @staticmethod
     def _nest_flattened_matrix(
