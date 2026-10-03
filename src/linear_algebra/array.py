@@ -12,6 +12,12 @@ class Array:
                 or a 2D matrix (e.g., [[-1, 0], [0, 1]]).
                 Lists with non-numerical elements or for different dimensions
                 raise ValueError.
+
+        Notes
+        -----
+        In a 2D matrix, elements are treated as [[x_11, x_12], [x_13, x_14]], where
+        the first element of the index is the row number and the second is the column
+        number. Conversely, on a vector they're treated as [x_11, x_12].
         """
         # Basic input validity checks
         if not isinstance(array, list):
@@ -64,13 +70,73 @@ class Array:
                 )
 
     def __add__(self, other: Array | int | float) -> Array:
-        """Add an Array element (left) to other (right)."""
-        pass
+        """
+        Defines behavior for Array + other.
+
+        Uses broadcasting only in the case of Array + int | float.
+        For Array + Array situations, each instance must have the same shape
+        for the operation to be valid.        
+        """
+        # Array + scalar
+        if isinstance(other, (int | float)):
+            if self.object_type == "vector":
+                return Array([
+                    element + other
+                    for element in self.object
+                ])
+            elif self.object_type == "matrix":
+                result = [  # [x_11, x_12, x_21, x_22]
+                   element + other
+                   for dimension in self.object
+                   for element in dimension
+                ]
+                return Array([
+                    [result[0], result[1]],
+                    [result[2], result[3]]
+                ])
+
+        # Array + Array
+        elif isinstance(other, Array):
+            # Check that types match: no broadcasting supported
+            if self.object_type != other.object_type:
+                raise ValueError(
+                    "Invalid operation: can only add two "
+                    "elements of the same type together, got "
+                    "a vector and a matrix."
+                )
+            # vector + vector
+            if self.object_type == "vector":
+                return Array([
+                    self.object[i] + other.object[i]
+                    for i in range(0, 2)
+                ])
+            elif self.object_type == "matrix":
+                result = [
+                    self.object[i][j] + other.object[i][j]
+                    for i in range(0, 2)
+                    for j in range(0, 2)
+                ]
+                return Array([
+                    [result[0], result[1]],
+                    [result[2], result[3]]
+                ])                
+        return NotImplemented
 
     def __radd__(self, other:  Array | int | float) -> Array:
         """
-        Addition rules for when an `Array` element is to the right
-        of an operation. Simply defaults to the default behavior of
-        __add__.
+        Defines behavior for other + Array,
+        in case other.__add__ returns NotImplemented.
+
+        Simply defaults to self.__add__.
         """
         return self.__add__(other)
+
+    def __sub__(self, other):
+        pass
+
+    def __rsub__(self, other):
+        pass
+
+    def __str__(self):
+        """Defines behavior when printing a class instance."""
+        return str(self.object)
