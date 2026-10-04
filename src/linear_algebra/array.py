@@ -157,9 +157,20 @@ class Array:
             return self.__add__(other)
         return NotImplemented
 
-    def __mul__(self, other) -> Array:
+    def __mul__(
+            self,
+            other,
+            num_decimals: int = 4
+    ) -> Array:
         """
         Defines behavior for Array * other.
+
+        Parameters
+        ----------
+        ...
+        num_decimals: int = 4
+            The max number of decimals to round each resulting element
+            off to.
 
         Notes
         -----
@@ -183,12 +194,12 @@ class Array:
         if isinstance(other, (int | float)):
             if self.object_type == "vector":
                 return Array([
-                    element * other
+                    round(element * other, num_decimals)
                     for element in self.object
                 ])
             elif self.object_type == "matrix":
                 result = [
-                    element * other
+                    round(element * other, num_decimals)
                     for dimension in self.object
                     for element in dimension
                 ]
@@ -232,8 +243,11 @@ class Array:
                         dim="col", pos=i+1
                     )
                     result.append(
-                        self.object[0] * matrix_dim[0] +
-                        self.object[1] * matrix_dim[1]
+                        round(
+                            self.object[0] * matrix_dim[0] +
+                            self.object[1] * matrix_dim[1],
+                            num_decimals
+                        )
                     )
                 return Array(result)
 
@@ -255,8 +269,11 @@ class Array:
                             dim="col", pos=j+1
                         )
                         dim.append(
-                            left_row[0] * right_column[0] + 
-                            left_row[1] * right_column[1]
+                            round(
+                                left_row[0] * right_column[0] + 
+                                left_row[1] * right_column[1],
+                                num_decimals
+                            )
                         )
                     result.append(dim)
                 return Array(result)    
@@ -326,3 +343,26 @@ class Array:
                 element[pos - 1]
                 for element in matrix
             ]
+
+    def rotate(
+            self,
+            angle: int | float,
+            unit="radians"
+        ) -> Array:
+        """
+        Rotate a vector array by a specified angle clockwise with
+        respect to the origin, either in radians or degrees.
+
+        TODO: Generalize for anti-clockwise rotation and for points
+        of reference other than the origin.
+        """
+        import math
+
+        if unit == "degrees":  # convert from degrees to radians
+            angle *= math.pi / 180
+
+        rotation_matrix = Array([
+            [math.cos(angle), -math.sin(angle)],
+            [math.sin(angle), math.cos(angle)]
+        ])
+        return self.__mul__(rotation_matrix)
