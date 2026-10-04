@@ -157,7 +157,7 @@ class Array:
             return self.__add__(other)
         return NotImplemented
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Array:
         """
         Defines behavior for Array * other.
 
@@ -214,12 +214,41 @@ class Array:
                 self.object_type == "vector"
                 and other.object_type == "matrix"
             ):
-                result = [
-                    self.object[i] * other.object[i][j]
-                    for i in range(0, 2)
-                    for j in range(0, 2)
-                ]
-                
+                result = []
+                for i in range(0, 2):
+                    matrix_dim = self._extract_matrix_dim(
+                        other.object,
+                        dim="col", pos=i+1
+                    )
+                    result.append(
+                        self.object[0] * matrix_dim[0] +
+                        self.object[1] * matrix_dim[1]
+                    )
+                return Array(result)
+
+            # Matrix (2, 2) * Matrix (2, 2) -> Matrix (2, 2)
+            if (
+                self.object_type == "matrix"
+                and other.object_type == "matrix"
+            ):
+                result = []
+                for i in range(0, 2):
+                    dim = []
+                    for j in range(0, 2):
+                        left_row = self._extract_matrix_dim(
+                            self.object,
+                            dim="row", pos=i+1
+                        )
+                        right_column = self._extract_matrix_dim(
+                            other.object,
+                            dim="col", pos=j+1
+                        )
+                        dim.append(
+                            left_row[0] * right_column[0] + 
+                            left_row[1] * right_column[1]
+                        )
+                    result.append(dim)
+                return Array(result)
     
         
         return NotImplemented
@@ -241,3 +270,49 @@ class Array:
             [flattened_array[0], flattened_array[1]],
             [flattened_array[2], flattened_array[3]]
         ]
+
+    @staticmethod
+    def _extract_matrix_dim(
+        matrix: list,
+        *,
+        dim: str,
+        pos: int
+    ) -> list:
+        """
+        Extracts the nth row or column from a matrix into a list.
+
+        Parameters
+        ----------
+        matrix: Array
+            A 2x2 matrix.
+        dim: str
+            Either "col" (column) or "row".
+        pos: int
+            The position of the row or column to extract, with
+            index starting at 1 to be consistent with math notation.
+
+        Returns
+        -------
+        list
+            A list with all elements of the specified dimension and
+            position.
+        """
+        # Sanity checks
+        if dim not in ["row", "col"]:
+            raise ValueError(
+                f"Invalid value for `dim`: {dim}. "
+                "Valid values: 'row', 'col'."
+            )
+        if pos not in [1, 2]:
+            raise ValueError(
+                f"Invalid value for `pos`: {pos}. "
+                "Valid values: 1, 2."
+            )
+
+        if dim == "row":
+            return matrix[pos - 1]
+        elif dim == "col":
+            return [
+                element[pos - 1]
+                for element in matrix
+            ]
