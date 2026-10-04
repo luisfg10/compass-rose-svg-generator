@@ -259,28 +259,7 @@ class Array:
                             left_row[1] * right_column[1]
                         )
                     result.append(dim)
-                return Array(result)
-
-            # Matrix (2, 2) * Vector (1, 2) -> Matrix (2, 2)
-            if (
-                self.object_type == "matrix"
-                and other.object_type == "vector"
-            ):
-                result = []
-                for i in range(0, 2):
-                    dim = []
-                    for j in range(0, 2):
-                        left_row = self._extract_matrix_dim(
-                            self.object,
-                            dim="row", pos=i+1
-                        )
-                        dim.append(
-                            left_row[0] * other.object[0] + 
-                            left_row[1] * other.object[1]
-                        )
-                    result.append(dim)
-                return Array(result)
-    
+                return Array(result)    
         
         return NotImplemented
 
