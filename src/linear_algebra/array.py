@@ -172,7 +172,7 @@ class Array:
             Applied to the current scope, this means:
             >> Vector (1, 2) * Matrix (2, 2) -> Vector (1, 2)
             >> Matrix (2, 2) * Matrix (2, 2) -> Matrix (2, 2)
-            >> Matrix (2, 2) * Vector (1, 2) -> Matrix (2, 2)
+            >> Matrix (2, 2) * Vector (1, 2) -> Invalid
             >> Vector (1, 2) * Vector (1, 2) -> Invalid
 
         Multiplying by a scalar broadcasts to each matrix element individually.
@@ -206,6 +206,17 @@ class Array:
                 raise ValueError(
                     "Invalid operation: multiplication between two "
                     "vectors not supported."
+                )
+
+            # Matrix * Vector
+            if (
+                self.object_type == "matrix"
+                and other.object_type == "vector"
+            ):
+                raise ValueError(
+                    "Invalid operation: multiplication between "
+                    "object of shape (2, 2) and object of shape (1, 2) "
+                    "not allowed."
                 )
 
             # Vector (1, 2) * Matrix (2, 2) -> Vector (1, 2)
@@ -246,6 +257,26 @@ class Array:
                         dim.append(
                             left_row[0] * right_column[0] + 
                             left_row[1] * right_column[1]
+                        )
+                    result.append(dim)
+                return Array(result)
+
+            # Matrix (2, 2) * Vector (1, 2) -> Matrix (2, 2)
+            if (
+                self.object_type == "matrix"
+                and other.object_type == "vector"
+            ):
+                result = []
+                for i in range(0, 2):
+                    dim = []
+                    for j in range(0, 2):
+                        left_row = self._extract_matrix_dim(
+                            self.object,
+                            dim="row", pos=i+1
+                        )
+                        dim.append(
+                            left_row[0] * other.object[0] + 
+                            left_row[1] * other.object[1]
                         )
                     result.append(dim)
                 return Array(result)
