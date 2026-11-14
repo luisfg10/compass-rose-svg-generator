@@ -1,169 +1,159 @@
-class Array:
+class TwoDimArray:
     """
     Base abstraction for doing matrix and vector operations in 2D.
 
-    TODO: Improve degree of abstraction to handle matrix addition,
-    substraction and multiplication in arbitrary n by m dimensions. Currently
-    only supports (1, 2) and (2, 2) matrices.
-    TODO: Improve degree of generalization to avoid manually typing the
-    solution for specific cases, as it doesn't scale for arbitrary dimensions.
+    Notes
+    -----
+    TODO: Add a minimal test suite to confirm methods behave as expected.
+    TODO: Generalize matrix and vector rotation in order to allow anti-clockwise
+    rotations (simple, as 30° anticlockwise is equivalent to 330° clockwise), as
+    well as rotations about a point different than the origin.
+    TODO: Add a method for dot product multiplication between self and other =
+    TwoDimArray, and use to generalize the dot product operation used in __mul__.
+    TODO: Add a method by which an instance can receive more rows (vectors).
     """
+
     def __init__(self, array: list[float | int | list[float | int]]) -> None:
         """
-        Initialize a matrix or vector inside an array as an `Array` instance.
+        Initialize a matrix or vector inside an array as a
+        `TwoDimArray` instance.
 
         Parameters
         ----------
-            array: list[float | int | list[float | int]]
-                A list containing a 2D vector (e.g., [-1, 0])
-                or a 2D matrix (e.g., [[-1, 0], [0, 1]]).
-                Lists with non-numerical elements or for different dimensions
-                raise ValueError.
+        array: list[float | int | list[float | int]]
+            A list containing n 2-dimensional lists, which are treated as (n, 2)
+            matrices.
 
         Notes
         -----
-        In a 2D matrix, elements are treated as [[x_11, x_12], [x_13, x_14]], where
-        the first element of the index is the row number and the second is the column
-        number. Conversely, on a vector they're treated as [x_11, x_12].
-
-        TODO: Even if nested lists are the correct way to display matrices to users,
-        they cause friction with vectors, which are not nested inside lists.
-        For consistency and better generalization of operations, either nest all
-        objects internally or none. The __str__ method can be adapted to separate
-        the internal representation of objects vs. the way they're displayed. 
+        Matrix elements are indexed internally as
+            [
+                [x_11, x_12],
+                [x_21, x_22],
+                ...,
+                [x_n1, x_n2]
+            ]
+        where the first value of the index is the row number and the second
+        is the column number. In the special case of n = 1 (a vector), initial value
+        can be accepted as either [x, y] or [[x, y]].
         """
         # Basic input validity checks
         if not isinstance(array, list):
             raise ValueError(
-                f"Invalid type for array: {type(array)}. "
-                "Expected list."
-            )
-        if len(array) != 2:
-            raise ValueError(
-                f"Expected a list of len 2, got {len(array)} instead."
-            )
+                f"Invalid type for array: {type(array)}. Expected list.")
 
-        # Check contents of list
-        if isinstance(array[0], (int, float)):  # expects vector
-            if not isinstance(array[1], (int, float)):
+        # Check special case of vector - a (1, 2) matrix
+        if all(isinstance(x, (int, float)) for x in array):
+            # 2-dim check
+            if len(array) != 2:
                 raise ValueError(
-                    f"Invalid type for second vector element: {type(array[1])}. "
-                    "Expected int or float."
+                    "Expected array as either a list of n nested 2-element lists, "
+                    f"or a 2-element list with only int or float. Got instead {array}."
                 )
-            self.object_type = "vector"
-            self.object = array
-        elif isinstance(array[0], list):
-            if not isinstance(array[1], list):
+            self.array = [array]
+            self.shape = (1, 2)
+
+        # General case of (n, 2) matrices
+        elif all(isinstance(x, list) for x in array):
+            # All elements inside must be 2-dim
+            if any(len(x) != 2 for x in array):
                 raise ValueError(
-                    f"Invalid value for second array element: {type(array[1])}. "
-                    "Expected a list to match first element."
+                    "All nested vectors inside the general array must "
+                    "have 2 and only 2 elements."
                 )
-            if not len(array[0]) == 2 or not len(array[1]) == 2:
-                raise ValueError(
-                    "At least one of the dimension vectors in the 2D "
-                    "matrix has an invalid number of elements. Expected 2 each."
-                )
-            flattened_elements = [  # [[1, 2], [3, 4]] -> [1, 2, 3, 4]
-                item for element in array
-                for item in element
+            # All elements must be numeric
+            flattened_list = [
+                cell
+                for row in array
+                for cell in row
             ]
-            for i in flattened_elements:
-                if not isinstance(i, (int, float)):
-                    raise ValueError(
-                        "Invalid type for at least one item inside the "
-                        "2D matrix. Expected int or float."
-                    )
-            self.object_type = "matrix"
-            self.object = array
+            if any(not isinstance(x, (int, float)) for x in flattened_list):
+                raise ValueError(
+                    "All cell values inside the array must be numeric."
+                )
+            self.array = array
+            self.shape = (len(array), 2)
 
         else:
             raise ValueError(
-                f"Invalid type for first array element: {type(array[0])}. "
-                "Expected int, float or list."
-                )
+                "Expected array as either a list of n nested 2-element lists, "
+                f"or a 2-element list with only int or float. Got instead {array}."
+            )
 
-    def __add__(self, other: Array | int | float) -> Array:
+
+    def __add__(self, other: TwoDimArray | int | float) -> TwoDimArray:
         """
-        Defines behavior for Array + other.
+        Defines behavior for TwoDimArray + other.
 
         Notes
         -----
-        Uses broadcasting only in the case of Array + int | float.
-        For Array + Array situations, each instance must have the same shape
-        for the operation to be valid.
+        Uses broadcasting only in the case of TwoDimArray + int | float.
+        For TwoDimArray + TwoDimArray situations, uses piecewise addition and
+        both elements must have the same shape for the operation to be valid.
 
-        __radd__ is intentionally not defined: there's no meaning
-        for, say 2 + [2, 1], as it assumes the element on the left "receives"
-        the one on the right.      
+        __radd__ is intentionally not defined: there's no meaning for, say
+        2 + [2, 1], as it assumes the element on the left "receives" the one
+        on the right.      
         """
-        # Array + scalar
-        if isinstance(other, (int | float)):
-            if self.object_type == "vector":
-                return Array([
-                    element + other
-                    for element in self.object
-                ])
-            elif self.object_type == "matrix":
-                result = [  # [x_11, x_12, x_21, x_22]
-                   element + other
-                   for dimension in self.object
-                   for element in dimension
-                ]
-                return Array(
-                    self._nest_flattened_matrix(result)
-                )
+        # other is scalar
+        if isinstance(other, (int, float)):
+            flat_matrix = [
+                cell + other
+                for dim in self.array
+                for cell in dim
+            ]
+            return self._nest_flattened_matrix(flat_matrix)
 
-        # Array + Array
-        elif isinstance(other, Array):
-            # Check that types match: no broadcasting supported
-            if self.object_type != other.object_type:
+        # other is TwoDimArray
+        elif isinstance(other, TwoDimArray):
+            # Check shapes are compatible
+            if self.shape != other.shape:
                 raise ValueError(
-                    "Invalid operation: can only add two "
-                    "elements of the same type together, got "
-                    "a vector and a matrix."
+                    "Matrix addition and subtraction is only supported "
+                    "for elements of the same size. "
+                    f"Got {self.shape} and {other.shape}."
                 )
-            # vector + vector
-            if self.object_type == "vector":
-                return Array([
-                    self.object[i] + other.object[i]
-                    for i in range(0, 2)
-                ])
-            elif self.object_type == "matrix":
-                result = [
-                    self.object[i][j] + other.object[i][j]
-                    for i in range(0, 2)
-                    for j in range(0, 2)
-                ]
-                return Array(
-                    self._nest_flattened_matrix(result)
-                )                
+            flat_matrix = [
+                self.array[i][j] + other.array[i][j]
+                for i in range(self.shape[0])
+                for j in range(self.shape[1])
+            ]
+            return self._nest_flattened_matrix(flat_matrix)
+
+        # Raise for invalid object type
         raise TypeError(
-            "Addition/substraction operation not supported "
-            f"between Array and {type(other)}."
+            "Addition/subtraction operation not supported between "
+            f"TwoDimArray and {type(other)}."
         )
 
-    def __sub__(self, other: Array | int | float) -> Array:
+
+    def __sub__(self, other: TwoDimArray | int | float) -> TwoDimArray:
         """
-        Defines behavior for self - other.
+        Defines behavior for TwoDimArray - other.
 
         Notes
         -----
         __rsub__ is intentionally not defined, for the same reason as
-        exposed for self.__radd__ in the __doc__ notes for self.__add__.
+        noted for self.__radd__ in the notes for self.__add__.
         
         """
-        if isinstance(other, (int, float, Array)):
+        if isinstance(other, (int, float, TwoDimArray)):
             other *= (-1)
             return self.__add__(other)
-        return NotImplemented
+
+        # Raise for invalid object type
+        raise TypeError(
+            "Addition/subtraction operation not supported between "
+            f"TwoDimArray and {type(other)}."
+        )
 
     def __mul__(
             self,
-            other,
+            other: TwoDimArray | int | float,
             num_decimals: int = 4
-    ) -> Array:
+    ) -> TwoDimArray:
         """
-        Defines behavior for Array * other.
+        Defines behavior for TwoDimArray * other.
 
         Parameters
         ----------
@@ -175,193 +165,107 @@ class Array:
         Notes
         -----
         Follows rules for matrix multiplication:
-            * The number of columns of the first element must
-            match the number of rows of the second
-            * If A is an n by m matrix and b is p by q, then their
-            product C is n by q. C_ij is the result of the dot product
-            of row i from matrix A and column J from matrix B.
-            Applied to the current scope, this means:
-            >> Vector (1, 2) * Matrix (2, 2) -> Vector (1, 2)
-            >> Matrix (2, 2) * Matrix (2, 2) -> Matrix (2, 2)
-            >> Matrix (2, 2) * Vector (1, 2) -> Invalid
-            >> Vector (1, 2) * Vector (1, 2) -> Invalid
+        * The number of columns of the first element must
+        match the number of rows of the second
+        * If A is an (n, m) matrix and b is (m, q), then their
+        product C is of dimensions (n, q).
+        * C_ij = sum over m (A_im * B_mj). In other words,
+        C_ij is the result of the piecewise sum of the dot products
+        of row i from matrix A and column J from matrix B.
 
         Multiplying by a scalar broadcasts to each matrix element individually.
-        Following the convention for addition and substraction,
-        __rmul__ is intentionally not defined.
+
+        Following the convention for addition and substraction, __rmul__ is
+        intentionally not defined.
         """
-        # Multiplication by scalar
-        if isinstance(other, (int | float)):
-            if self.object_type == "vector":
-                return Array([
-                    round(element * other, num_decimals)
-                    for element in self.object
-                ])
-            elif self.object_type == "matrix":
-                result = [
-                    round(element * other, num_decimals)
-                    for dimension in self.object
-                    for element in dimension
-                ]
-                return Array(
-                    self._nest_flattened_matrix(result)
-                )
+        # other is scalar
+        if isinstance(other, (int, float)):
+            flat_matrix = [
+                round(cell * other, num_decimals)
+                for row in self.array
+                for cell in row
+            ]
+            return self._nest_flattened_matrix(flat_matrix)
 
-        # Array * Array
-        elif isinstance(other, Array):
-            # Vector * Vector
-            if (
-                self.object_type == "vector"
-                and other.object_type == "vector"
-            ):
+        # other is TwoDimArray
+        elif isinstance(other, TwoDimArray):
+            # Check dimension compatibility
+            if self.shape[1] != other.shape[0]:
                 raise ValueError(
-                    "Invalid operation: multiplication between two "
-                    "vectors not supported."
+                    "For matrix multiplication to be possible, "
+                    "the number of columns in the first element must be "
+                    "equal to the number of rows of the second. "
+                    f"Got {self.shape[1]} and {other.shape[0]}."
                 )
+            # Populate resulting matrix iteratively
+            matrix_c = []
+            for i in range(self.shape[0]):  # equals result_matrix.shape[0]
+                row_a = self.array[i]  # row from matrix A (self)
+                row_c = []  # resulting row to be built
+                for j in range(other.shape[1]):  # equals result_matrix.shape[1]
+                    col_b = [  # row from matrix B (self)
+                        row[j] for row in other.array
+                    ]
+                    # Perform dot product addition between row_a and col_b
+                    cell = 0
+                    for x in range(len(row_a)):
+                        cell += row_a[x] * col_b[x]
+                    row_c.append(round(cell, num_decimals))
+                matrix_c.append(row_c)
 
-            # Matrix * Vector
-            if (
-                self.object_type == "matrix"
-                and other.object_type == "vector"
-            ):
-                raise ValueError(
-                    "Invalid operation: multiplication between "
-                    "object of shape (2, 2) and object of shape (1, 2) "
-                    "not allowed."
-                )
+            return TwoDimArray(matrix_c)
 
-            # Vector (1, 2) * Matrix (2, 2) -> Vector (1, 2)
-            # e.g., [1, 0] * [[1, 1], [2, 0]] -> [1, 1]
-            if (
-                self.object_type == "vector"
-                and other.object_type == "matrix"
-            ):
-                result = []
-                for i in range(0, 2):
-                    matrix_dim = self._extract_matrix_dim(
-                        other.object,
-                        dim="col", pos=i+1
-                    )
-                    result.append(
-                        round(
-                            self.object[0] * matrix_dim[0] +
-                            self.object[1] * matrix_dim[1],
-                            num_decimals
-                        )
-                    )
-                return Array(result)
-
-            # Matrix (2, 2) * Matrix (2, 2) -> Matrix (2, 2)
-            if (
-                self.object_type == "matrix"
-                and other.object_type == "matrix"
-            ):
-                result = []
-                for i in range(0, 2):
-                    dim = []
-                    for j in range(0, 2):
-                        left_row = self._extract_matrix_dim(
-                            self.object,
-                            dim="row", pos=i+1
-                        )
-                        right_column = self._extract_matrix_dim(
-                            other.object,
-                            dim="col", pos=j+1
-                        )
-                        dim.append(
-                            round(
-                                left_row[0] * right_column[0] + 
-                                left_row[1] * right_column[1],
-                                num_decimals
-                            )
-                        )
-                    result.append(dim)
-                return Array(result)    
-        
-        return NotImplemented
-
-    def __rmul__(self, other):
-        pass
+        # Raise for invalid object type
+        raise TypeError(
+            "Multiplication operation not supported between "
+            f"TwoDimArray and {type(other)}."
+        )
 
     def __str__(self):
         """Defines behavior when printing a class instance."""
-        return str(self.object)  # self.object is a list so this works
+        # self.array is a list so defaults to list.__str__
+        return str(self.array)
 
-    @staticmethod
     def _nest_flattened_matrix(
-        flattened_array: list[int | float]) -> list[list[int | float]]:
-        """Simplify common operation: go from
-        [x_11, x_12, x_21, x_22] -> [[x_11, x_12], [x_21, x_22]]
+            self,
+            flattened_array: list[int | float]
+    ) -> TwoDimArray:
         """
-        return [
-            [flattened_array[0], flattened_array[1]],
-            [flattened_array[2], flattened_array[3]]
-        ]
-
-    @staticmethod
-    def _extract_matrix_dim(
-        matrix: list,
-        *,
-        dim: str,
-        pos: int
-    ) -> list:
+        Internal method to simplify common data operation from a flattened
+        list to a nested one.
+        e.g., go from
+            [x_11, x_12, x_21, x_22]
+        to
+            [[x_11, x_12], [x_21, x_22]]
         """
-        Extracts the nth row or column from a matrix into a list.
-
-        Parameters
-        ----------
-        matrix: Array
-            A 2x2 matrix.
-        dim: str
-            Either "col" (column) or "row".
-        pos: int
-            The position of the row or column to extract, with
-            index starting at 1 to be consistent with math notation.
-
-        Returns
-        -------
-        list
-            A list with all elements of the specified dimension and
-            position.
-        """
-        # Sanity checks
-        if dim not in ["row", "col"]:
-            raise ValueError(
-                f"Invalid value for `dim`: {dim}. "
-                "Valid values: 'row', 'col'."
-            )
-        if pos not in [1, 2]:
-            raise ValueError(
-                f"Invalid value for `pos`: {pos}. "
-                "Valid values: 1, 2."
+        result = []
+        for i in range(0, len(flattened_array), 2):
+            result.append(
+                [flattened_array[i], flattened_array[i + 1]]
             )
 
-        if dim == "row":
-            return matrix[pos - 1]
-        elif dim == "col":
-            return [
-                element[pos - 1]
-                for element in matrix
-            ]
+        return TwoDimArray(result)
 
     def rotate(
             self,
             angle: int | float,
+            *,
             unit="radians"
-        ) -> Array:
+        ) -> TwoDimArray:
         """
-        Rotate a vector array by a specified angle clockwise with
-        respect to the origin, either in radians or degrees.
+        Rotate a matrix by a specified angle clockwise with respect
+        to the origin, either in radians or degrees.
 
-        TODO: Generalize for anti-clockwise rotation and for points
-        of reference other than the origin.
+        If rotating an (n, 2) matrix, each row in the original matrix
+        is rotated individually of the other rows, conserving its
+        magnitude and position in the original matrix.
         """
-        import math
+        import math  # lazy import just for this module
 
         if unit == "degrees":  # convert from degrees to radians
             angle *= math.pi / 180
 
-        rotation_matrix = Array([
+        rotation_matrix = TwoDimArray([
             [math.cos(angle), -math.sin(angle)],
             [math.sin(angle), math.cos(angle)]
         ])
