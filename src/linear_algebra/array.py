@@ -4,6 +4,9 @@ class TwoDimArray:
 
     Notes
     -----
+    All of the operation methods return a modified object and leave the
+    original one intact. There are no "inplace" methods in this class.
+
     TODO: Add a minimal test suite to confirm methods behave as expected.
     TODO: Generalize matrix and vector rotation in order to allow anti-clockwise
     rotations (simple, as 30° anticlockwise is equivalent to 330° clockwise), as
@@ -15,7 +18,7 @@ class TwoDimArray:
 
     def __init__(self, array: list[float | int | list[float | int]]) -> None:
         """
-        Initialize a matrix or vector inside an array as a
+        Initialize a matrix inside a nested list as a
         `TwoDimArray` instance.
 
         Parameters
@@ -270,3 +273,43 @@ class TwoDimArray:
             [math.sin(angle), math.cos(angle)]
         ])
         return self.__mul__(rotation_matrix)
+
+    def translate(
+            self,
+            coords: tuple[int | float]
+    ) -> TwoDimArray:
+        """
+        Translate an array a specified amount.
+
+        Parameters
+        ----------
+        coords: tuple[int | float]
+            A tuple containing the amount for translation,
+            in order (horizontal, vertical).
+
+        Returns
+        -------
+        TwoDimArray
+            The new matrix after applying translation.
+        """
+        # Input sanity checks
+        if (
+            not isinstance(coords, tuple)
+            or not all(isinstance(x, (int, float)) for x in coords)
+            or len(coords) != 2
+        ):
+            raise ValueError(
+                "Coordinates for translation must be provided as a "
+                "tuple of two numeric elements, where the first is "
+                "the displacement amount horizontally and the second "
+                "vertically."
+            )
+
+        # Perform translation
+        result = []
+        for row in self.array:
+            result.append([
+                row[0] + coords[0],
+                row[1] + coords[1]
+            ])
+        return TwoDimArray(result)
