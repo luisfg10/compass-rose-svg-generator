@@ -1,2 +1,31 @@
-"""Compass rose SVG generator main entrypoint."""
-# from src import generate_compass_rose_svg
+"""
+Compass rose SVG generator main entrypoint.
+
+Receives function parameters as flags in the terminal (see
+CompassRoseSVGGenerator.run() for full details on each parameter).
+
+Example for calling this function from the terminal:
+    python main.py --rose-radius 200 --rose-arm-h 0.1 (etc. for other params)
+"""
+import argparse
+
+from src import (
+    add_arguments_from_signature,
+    CompassRoseSVGGenerator
+)
+
+
+def main():
+    writer = CompassRoseSVGGenerator()
+
+    parser = argparse.ArgumentParser(
+        description="Generate SVGs from a template."
+    )
+    add_arguments_from_signature(parser, writer.run)
+    args = parser.parse_args()
+
+    writer.run(**vars(args))
+
+
+if __name__ == "__main__":
+    main()

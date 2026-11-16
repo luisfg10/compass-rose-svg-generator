@@ -369,7 +369,7 @@ class CompassRoseSVGGenerator:
 
     def run(
             self,
-            rose_radius: int,
+            rose_radius: int = 110,
             rose_arm_h: float = 0.25,
             rose_arm_w: float = 0.125,
             main_fill_color: str = "#E0A84A",
