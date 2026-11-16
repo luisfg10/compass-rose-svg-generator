@@ -176,7 +176,8 @@ class CompassRoseSVGGenerator:
         right_half_ref = initial_blade_metadata[1]
 
         # Build new blades iteratively
-        for turn in range(rotation_degrees, 360, rotation_degrees):  # start, stop, step
+        for blade_index in range(1, n_blades):  # start, stop, step
+            turn = 360 * blade_index / n_blades
             # Append new left
             new_left_half_geom = left_half_ref["geom"].rotate(turn, unit="degrees")
             full_blades.append({
@@ -436,7 +437,7 @@ class CompassRoseSVGGenerator:
             n_blades_first_level: int = 4,
             padding: int = 10,
             output_filename: str = SVG_OUTPUT_FILENAME,
-            overwrite_existing_file: bool = True
+            overwrite_existing_file: bool = False
     ) -> None:
         """
         Main callable for creating and saving an SVG file with
