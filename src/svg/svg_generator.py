@@ -1,9 +1,3 @@
-from config import (
-    MAIN_ROSE_COLOR,
-    SECONDARY_ROSE_COLOR,
-    ROSE_ARM_H,
-    ROSE_ARM_W
-)
 from src.linear_algebra import TwoDimArray
 
 
@@ -205,14 +199,76 @@ class CompassRoseSVGGenerator:
 
     @staticmethod
     def translate_rose_metadata_to_svg(
-        rose_metadata: list[dict[str, TwoDimArray | str | None]] 
+        rose_metadata: list[dict[str, TwoDimArray | str | None]],
+        *,
+        stroke_color: str,
+        stroke_width: int
     ) -> str:
         """
         Translates a list of rose metadata into a string ready to be
         formatted into an SVG template.
         Assumes rose metadata is provided as exemplified in
         `compute_1st_level_base_arm`.
+
+        Notes
+        -----
+        In case of no fill, in SVG it's used fill="none".
+
+        Examples
+        --------
+        >>> example_metadata = [
+            {
+                "geom": TwoDimArray([
+                    [10, 10],
+                    [9.9, 10.15],
+                    [10, 11]
+                ]),
+                "fill": "#E0A84A"
+            }
+        ]
+        >>> svg_example = CompassRoseSVGGenerator().translate_rose_metadata_to_svg(
+            example_metadata,
+            stroke_color="#999999",
+            stroke_width=2
+        )
+        >>> print(svg_example)
+            '<polygon
+                points="10,10 9.9,10.15 10,11"
+                fill="#E0A84A"
+                stroke="#999999"
+                stroke-width="2" 
+            />'
         """
+        template = """<polygon
+            points="{points}"
+            fill="{fill_color}"
+            stroke="{stroke_color}"
+            stroke-width="{stroke_width}" 
+        />
+        """
+
+        polygon_code = ''
+        for polygon in rose_metadata:
+            new_points = ''
+            # Fill out points iteratively
+            for point in polygon["geom"].array:  # Access TwoDimArray as list
+                if len(new_points) != 0:
+                    new_points += ' '  # comma between points
+                new_points += f'{point[0]},{point[1]}'
+
+            # Solve for fill color
+            fill_color = (
+                'none' if polygon["fill"] is None
+                else polygon["fill"]
+            )
+            
+            polygon_code += template.format(
+                points=new_points,
+                fill_color=fill_color,
+                stroke_color=stroke_color,
+                stroke_width=stroke_width
+            )
+        return polygon_code
 
     def write_svg() -> None:
         """
@@ -224,10 +280,12 @@ class CompassRoseSVGGenerator:
     def run(
             self,
             rose_radius: int,
-            rose_arm_h: float = ROSE_ARM_H,
-            rose_arm_w: float = ROSE_ARM_W,
-            main_color: str = MAIN_ROSE_COLOR,
-            secondary_color: str | None = SECONDARY_ROSE_COLOR
+            rose_arm_h: float = 0.25,
+            rose_arm_w: float = 0.125,
+            main_fill_color: str = "#E0A84A",
+            secondary_fill_color: str | None = None,
+            stroke_color: str = "#E0A84A",
+            stroke_width: int = 3
     ) -> None:
         """
         Main callable for creating and saving an SVG file with
@@ -246,13 +304,17 @@ class CompassRoseSVGGenerator:
             The 'w' parameter for the rose arm, expressed as a factor
             of the rose's radius (see README for more info).
             Must be between 0 and 1.
-        main_color: str
+        main_fill_color: str
             A hex or other valid color code to use as the main color
-            for the rose. This will be used for the rose's outline, as well
-            as for the fill in the arms' left sides.
-        secondary_color: str | None
+            for the rose. This will be used to fill the rose's left sides
+            for each arm.
+        secondary_fill_color: str | None
             Optional secondary color to fill the rose's right arm side.
             If not provided, it's left empty and transparent to background.
+        stroke_color: str
+            The color to use when outlining the rose's shape.
+        stroke_width: int
+            The thickness of the lines drawing the rose's shape.
         """
         # -----------------------------------------------------------------------
         # Input consistency checks
@@ -261,13 +323,21 @@ class CompassRoseSVGGenerator:
             raise ValueError(
                 "Invalid value provided for `rose_radius`."
             )
-        if not isinstance(main_color, str) or len(main_color) == 0:
+        if not isinstance(main_fill_color, str) or len(main_fill_color) == 0:
             raise ValueError(
-                "Invalid value provided for `main_color`."
+                "Invalid value provided for `main_fill_color`."
+            )
+        if not isinstance(stroke_color, str) or len(stroke_color) == 0:
+            raise ValueError(
+                "Invalid value provided for `stroke_color`."
+            )
+        if not isinstance(stroke_width, int) or stroke_width <= 0:
+            raise ValueError(
+                "Invalid value provided for `stroke_width`."
             )
         if (
-            not isinstance(secondary_color, str)
-            or len(secondary_color) == 0
+            not isinstance(secondary_fill_color, str)
+            or len(secondary_fill_color) == 0
         ):
             secondary_color = None
 
@@ -287,14 +357,20 @@ class CompassRoseSVGGenerator:
             l=rose_radius,
             h=rose_arm_h,
             w=rose_arm_w,
-            main_color=main_color,
-            secondary_color=secondary_color
+            main_color=main_fill_color,
+            secondary_color=secondary_fill_color
         )
 
         # Use rotation to build the other three arms
-        full_arm_metadata = self.build_full_rose_level(
+        full_rose_metadata = self.build_full_rose_level(
             first_arm_metadata,
             n_arms=4
         )
 
         # Re-center arm coordinates for SVG
+        recentered_metadata = self.recenter_rose(
+            rose_radius=rose_radius,
+            rose_metadata=full_rose_metadata
+        )
+
+        # Convert metadata into SVG-ready code
