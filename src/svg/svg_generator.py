@@ -84,12 +84,12 @@ class CompassRoseSVGGenerator:
         full_w = w * l
 
         # Store geomtry objects as TwoDimArrays
-        left_geom = TwoDimArray([
+        right_geom = TwoDimArray([
             [0, 0],
             [-full_w, full_h],
             [0, l]
         ])
-        right_geom = TwoDimArray([
+        left_geom = TwoDimArray([
             [0, 0],
             [full_w, full_h],  # only change to left_geom is the sign here
             [0, l]
@@ -379,9 +379,9 @@ class CompassRoseSVGGenerator:
             stroke_color: str = "#E0A84A",
             stroke_width: int = 3,
             n_arms_first_level: int = 4,
-            padding: int = 1,
+            padding: int = 10,
             output_filename: str = SVG_OUTPUT_FILENAME,
-            overwrite_existing_file: bool = False
+            overwrite_existing_file: bool = True
     ) -> None:
         """
         Main callable for creating and saving an SVG file with
