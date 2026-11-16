@@ -5,7 +5,7 @@ Receives function parameters as flags in the terminal (see
 CompassRoseSVGGenerator.run() for full details on each parameter).
 
 Example for calling this function from the terminal:
-    python main.py --rose-radius 200 --rose-arm-h 0.1 (etc. for other params)
+    python main.py --rose-radius 200 (etc. for other params)
 """
 import argparse
 

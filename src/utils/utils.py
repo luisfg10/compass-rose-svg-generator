@@ -1,7 +1,21 @@
 import argparse
 import inspect
+import math
 import typing
 import types
+
+
+def convert_deg_to_rad(angle: int | float) -> float:
+    """Convert an angle in degrees to radians."""
+    return angle * math.pi / 180
+
+
+def _convert_int_or_float(value: str) -> int | float:
+    try:
+        return int(value)
+    except ValueError:
+        return float(value)
+
 
 def add_arguments_from_signature(
     parser: argparse.ArgumentParser,
@@ -56,16 +70,16 @@ def add_arguments_from_signature(
         param_type = hints.get(name)
         if param_type is None and has_default and param.default is not None:
             param_type = type(param.default)
-        if (
-            typing.get_origin(param_type) in (typing.Union, types.UnionType)
-            and type(None) in typing.get_args(param_type)
-        ):
-            non_none_types = tuple(
-                arg for arg in typing.get_args(param_type)
-                if arg is not type(None)
-            )
-            if len(non_none_types) == 1:
-                param_type = non_none_types[0]
+        if typing.get_origin(param_type) in (typing.Union, types.UnionType):
+            param_types = typing.get_args(param_type)
+            if len(param_types) == 2 and int in param_types and float in param_types:
+                param_type = _convert_int_or_float
+            elif type(None) in param_types:
+                non_none_types = tuple(
+                    arg for arg in param_types if arg is not type(None)
+                )
+                if len(non_none_types) == 1:
+                    param_type = non_none_types[0]
 
         # Options passed to parser.add_argument below. `dest` makes sure the
         # parsed value is stored under the original parameter name, so that

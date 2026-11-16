@@ -3,6 +3,7 @@ from string import Template
 
 from config import SVG_TEMPLATE_FILE, SVG_OUTPUT_FILENAME, OUTPUTS_DIR
 from src.linear_algebra import TwoDimArray
+from src.utils.utils import convert_deg_to_rad
 
 
 class CompassRoseSVGGenerator:
@@ -13,8 +14,10 @@ class CompassRoseSVGGenerator:
 
     Notes
     -----
-    TODO: Would be nice to generalize for n levels of arm geometry
-    without explicitly coding for level parameters.
+    TODO: Allow for building a second rose blades level on top
+    of the first one.
+    TODO: Would be nice to generalize for n levels of blade geometry
+    without explicitly coding for each level.
     """
     def __init__(
             self,
@@ -44,23 +47,24 @@ class CompassRoseSVGGenerator:
         self.outputs_dir = outputs_dir
 
     @staticmethod
-    def compute_1st_level_base_arm(
+    def compute_1st_level_base_blade(
             l: int | float,
             *,
             h: float,
             w: float,
             main_color: str,
-            secondary_color: str | None = None
+            secondary_color: str | None = None,
+            factors_need_scaling: bool = False
     ) -> list[dict[str, TwoDimArray | str | None]]:
         """
-        Solve for the 'N' arm of the first level of the compass
+        Solve for the 'N' blade of the first level of the compass
         rose, which is made up of two halves: one on the left and
         another on the right. Assumes coordinates start at (0, 0).
 
         Parameters
         ----------
         l: int | float
-            Arm length for the compass rose.
+            blade length for the compass rose.
         h: int | float
             Base edge height for the rose, expressed as a factor of l.
         w: int | float
@@ -72,16 +76,22 @@ class CompassRoseSVGGenerator:
             Hex or other valid color code to use as the main fill color
             for the SVG. If not provided the secondary color is not filled
             and is instead left as transparent.
+        factors_need_scaling: bool = False
+            If True, scales the h and w factors by the rose's radius.
 
         Returns
         -------
         list[dict[str, TwoDimArray | str | None]
-            List where each element represents the metadata for an arm half:
+            List where each element represents the metadata for an blade half:
             its geometry (represented as a TwoDimArray) + its fill.
         """
         # Pass h and w to full values
-        full_h = h * l
-        full_w = w * l
+        if factors_need_scaling:
+            full_h = h * l
+            full_w = w * l
+        else:
+            full_h = h
+            full_w = w
 
         # Store geomtry objects as TwoDimArrays
         right_geom = TwoDimArray([
@@ -110,26 +120,26 @@ class CompassRoseSVGGenerator:
 
     @staticmethod
     def build_full_rose_level(
-            initial_arm_metadata: list[dict[str, TwoDimArray | str | None]],
+            initial_blade_metadata: list[dict[str, TwoDimArray | str | None]],
             *,
-            n_arms: int,
+            n_blades: int,
             inplace: bool = False
     ) -> list[dict[str, TwoDimArray | str | None]]:
         """
-        Get the metadata for an initial arm with two halves and use it to
-        populate the other arm halves based on the number of arms to have in
+        Get the metadata for an initial blade with two halves and use it to
+        populate the other blade halves based on the number of blades to have in
         total for the level.
 
         Parameters
         ----------
-        initial_arm_metadata: list[dict[str, TwoDimArray | str | None]]
-            List where each element represents the metadata for an arm half:
-            its geometry + its fill (see output from `compute_1st_level_base_arm`
+        initial_blade_metadata: list[dict[str, TwoDimArray | str | None]]
+            List where each element represents the metadata for an blade half:
+            its geometry + its fill (see output from `compute_1st_level_base_blade`
             for more context).
-        n_arms: int
-            The number of arms to generate for the level, including the initial
-            arm. The code generates the metadata for the (n_arms - 1) missing
-            arms by leveraging the TwoDimArray.rotate() method. Arms are spaced
+        n_blades: int
+            The number of blades to generate for the level, including the initial
+            blade. The code generates the metadata for the (n_blades - 1) missing
+            blades by leveraging the TwoDimArray.rotate() method. blades are spaced
             out evenly.
         inplace: bool = False
             Whether to write to the original object or to a new one in memory.
@@ -137,50 +147,50 @@ class CompassRoseSVGGenerator:
         Returns
         -------
         list[dict[str, TwoDimArray | str | None]]
-            New list where each element represents the metadata for an arm half:
+            New list where each element represents the metadata for an blade half:
             its geometry (represented as a TwoDimArray) + its fill.
         """
         # Input Validity checks
         if (
-            not isinstance(initial_arm_metadata, list)
-            or len(initial_arm_metadata) != 2
-            or any(not isinstance(x, dict) for x in initial_arm_metadata)
+            not isinstance(initial_blade_metadata, list)
+            or len(initial_blade_metadata) != 2
+            or any(not isinstance(x, dict) for x in initial_blade_metadata)
         ):
             raise ValueError(
                 "Expected a list of two elements, where each element "
-                "is a dict containing the metadata for an arm half. "
-                f"Got {initial_arm_metadata}."
+                "is a dict containing the metadata for an blade half. "
+                f"Got {initial_blade_metadata}."
             )
 
         # Init return object
         if inplace:
-            full_arms = initial_arm_metadata  # points to the same object in memory
+            full_blades = initial_blade_metadata  # points to the same object in memory
         else:
-            full_arms = initial_arm_metadata.copy()  # points to independent object
+            full_blades = initial_blade_metadata.copy()  # points to independent object
 
         # Solve for rotation value
-        rotation_degrees = int(360 / n_arms)
+        rotation_degrees = int(360 / n_blades)
 
-        # Get arm halves
-        left_half_ref = initial_arm_metadata[0]
-        right_half_ref = initial_arm_metadata[1]
+        # Get blade halves
+        left_half_ref = initial_blade_metadata[0]
+        right_half_ref = initial_blade_metadata[1]
 
-        # Build new arms iteratively
+        # Build new blades iteratively
         for turn in range(rotation_degrees, 360, rotation_degrees):  # start, stop, step
             # Append new left
             new_left_half_geom = left_half_ref["geom"].rotate(turn, unit="degrees")
-            full_arms.append({
+            full_blades.append({
                 "geom": new_left_half_geom,
                 "fill": left_half_ref["fill"]
             })
             # Append new right
             new_right_half_geom = right_half_ref["geom"].rotate(turn, unit="degrees")
-            full_arms.append({
+            full_blades.append({
                 "geom": new_right_half_geom,
                 "fill": right_half_ref["fill"]
             })
 
-        return full_arms
+        return full_blades
 
     @staticmethod
     def recenter_rose(
@@ -201,12 +211,12 @@ class CompassRoseSVGGenerator:
         Parameters
         ----------
         rose_radius: int | float
-            The length of a rose arm. The full size of the SVG is assumed to
+            The length of a rose blade. The full size of the SVG is assumed to
             be two times this.
         rose_metadata: list[dict[str, TwoDimArray | str | None]]
-            The metadata for the rose arms. Does not check how many arms are
+            The metadata for the rose blades. Does not check how many blades are
             there and assumes they have expected structure. See
-            `compute_1st_level_base_arm` for more context on expected schema.
+            `compute_1st_level_base_blade` for more context on expected schema.
         padding: int = 0
             Number of fill pixels on each border of the SVG. Assumes it's applied
             uniformly across all 4 borders of the image.
@@ -236,7 +246,7 @@ class CompassRoseSVGGenerator:
         Translates a list of rose metadata into a string ready to be
         formatted into an SVG template.
         Assumes rose metadata is provided as exemplified in
-        `compute_1st_level_base_arm`.
+        `compute_1st_level_base_blade`.
 
         Notes
         -----
@@ -322,7 +332,7 @@ class CompassRoseSVGGenerator:
             String containing the contents for the SVG. In this case, the
             polygons for the rose.
         rose_radius: int
-            The length of a single rose arm.
+            The length of a single rose blade.
         padding: int
             How many pixels to use to fill each border. Assumes they're
             applied uniformly on each border of the image.
@@ -369,16 +379,61 @@ class CompassRoseSVGGenerator:
         target.write_text(svg, encoding="utf-8")
         return target
 
+    @staticmethod
+    def get_blade_first_level_dims(
+        *,
+        rose_radius: int,
+        rose_blade_angle: int | float,
+        n_blades: int
+    ) -> tuple[int | float, int | float]:
+        """
+        Determine the supporting dimensions for a rose blade,
+        based on its length, angle and number of blades.
+
+        This is done in order to ensure all blades take up their
+        own space in the SVG and 'fit' each other correctly in their
+        borders. Due to aesthetic reasons, blades only match at the
+        borders for 4 or more blades.
+
+        Parameters
+        ----------
+        ...
+
+        Returns
+        -------
+        tuple[int | float, int | float]
+            A tuple with two elements, representing the 'h' and 'w'
+            factors needed to build the rose blade geometry
+        """
+        import math
+
+        # Convert initial angle to radians
+        blade_angle_rad = convert_deg_to_rad(rose_blade_angle)
+
+        if n_blades < 4:  # See docstring for explanation
+            n_blades = 4
+
+        bisector_angle_deg = 90 - (360 / (n_blades * 2))
+        bisector_angle_rad = convert_deg_to_rad(bisector_angle_deg)
+
+        w_factor = (
+            rose_radius / (
+                math.tan(bisector_angle_rad) + (1 / math.tan(blade_angle_rad))
+            )
+        )
+        h_factor = w_factor * math.tan(bisector_angle_rad)
+
+        return w_factor, h_factor
+
     def run(
             self,
             rose_radius: int = 110,
-            rose_arm_h: float = 0.25,
-            rose_arm_w: float = 0.125,
+            rose_blade_angle: int | float = 15,
             main_fill_color: str = "#E0A84A",
             secondary_fill_color: str | None = None,
             stroke_color: str = "#E0A84A",
-            stroke_width: int = 3,
-            n_arms_first_level: int = 4,
+            stroke_width: int = 1,
+            n_blades_first_level: int = 4,
             padding: int = 10,
             output_filename: str = SVG_OUTPUT_FILENAME,
             overwrite_existing_file: bool = True
@@ -391,28 +446,23 @@ class CompassRoseSVGGenerator:
         ----------
         rose_radius: int
             The radius for the rose, i.e., the length
-            of the N-S-E-W arms of the rose.
-        rose_arm_h: float
-            The 'h' parameter for the rose arm, expressed as a factor
-            of the rose's radius (see README for more info).
-            Must be between 0 and 1.
-        rose_arm_w: float
-            The 'w' parameter for the rose arm, expressed as a factor
-            of the rose's radius (see README for more info).
-            Must be between 0 and 1.
+            of the N-S-E-W blades of the rose.
+        rose_blade_angle: int | float
+            The angle, in degrees, with which the blade opens from the
+            top (please see README.md for diagram).
         main_fill_color: str
             A hex or other valid color code to use as the main color
             for the rose. This will be used to fill the rose's left sides
-            for each arm.
+            for each blade.
         secondary_fill_color: str | None
-            Optional secondary color to fill the rose's right arm side.
+            Optional secondary color to fill the rose's right blade side.
             If not provided, it's left empty and transparent to background.
         stroke_color: str
             The color to use when outlining the rose's shape.
         stroke_width: int
             The thickness of the lines drawing the rose's shape.
-        n_arms_first_level: int
-            The number of rose arms to display in the first level of the rose.
+        n_blades_first_level: int
+            The number of rose blades to display in the first level of the rose.
             Standard value is 4, but there's no reason it can't be different.
         padding: int = 1
             Number of empty pixels to use as image border.
@@ -442,9 +492,9 @@ class CompassRoseSVGGenerator:
             raise ValueError(
                 "Invalid value provided for `stroke_width`."
             )
-        if not isinstance(n_arms_first_level, int) or n_arms_first_level <= 0:
+        if not isinstance(n_blades_first_level, int) or n_blades_first_level <= 0:
             raise ValueError(
-                "Invalid value provided for `n_arms_first_level`."
+                "Invalid value provided for `n_blades_first_level`."
             )
         if (
             not isinstance(secondary_fill_color, str)
@@ -452,33 +502,32 @@ class CompassRoseSVGGenerator:
         ):
             secondary_color = None
 
-        rose_arm_factors = [rose_arm_h, rose_arm_w]
-        for factor in rose_arm_factors:
-            if not isinstance(factor, float) or factor <= 0 or factor > 1:
-                raise ValueError(
-                    "Invalid value provided for either "
-                    "`rose_arm_h` or `rose_arm_w`."
-                )
-
         # -----------------------------------------------------------------------
         # Build rose's first level
 
-        # Get metadata for 'N' arm
-        first_arm_metadata: list[dict] = self.compute_1st_level_base_arm(
+        # Get rose blade h and w from blade angle
+        rose_blade_w, rose_blade_h = self.get_blade_first_level_dims(
+            rose_radius=rose_radius,
+            rose_blade_angle=rose_blade_angle,
+            n_blades=n_blades_first_level
+        )
+
+        # Get metadata for 'N' blade
+        first_blade_metadata: list[dict] = self.compute_1st_level_base_blade(
             l=rose_radius,
-            h=rose_arm_h,
-            w=rose_arm_w,
+            h=rose_blade_h,
+            w=rose_blade_w,
             main_color=main_fill_color,
             secondary_color=secondary_fill_color
         )
 
-        # Use rotation to build the other three arms
+        # Use rotation to build the other three blades
         full_rose_metadata: list[dict] = self.build_full_rose_level(
-            first_arm_metadata,
-            n_arms=n_arms_first_level
+            first_blade_metadata,
+            n_blades=n_blades_first_level
         )
 
-        # Re-center arm coordinates for SVG
+        # Re-center blade coordinates for SVG
         recentered_metadata: list[dict] = self.recenter_rose(
             rose_radius=rose_radius,
             rose_metadata=full_rose_metadata,

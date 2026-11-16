@@ -1,3 +1,6 @@
+from src.utils.utils import convert_deg_to_rad
+
+
 class TwoDimArray:
     """
     Base abstraction for doing matrix and vector operations in 2D.
@@ -13,7 +16,7 @@ class TwoDimArray:
     well as rotations about a point different than the origin.
     TODO: Add a method for dot product multiplication between self and other =
     TwoDimArray, and use to generalize the dot product operation used in __mul__.
-    TODO: Add a method by which an instance can receive more rows (vectors).
+    TODO: Add a method by which an instance can receive or lose rows (vectors).
     """
 
     def __init__(self, array: list[float | int | list[float | int]]) -> None:
@@ -271,7 +274,7 @@ class TwoDimArray:
         import math  # lazy import just for this module
 
         if unit == "degrees":  # convert from degrees to radians
-            angle *= math.pi / 180
+            angle = convert_deg_to_rad(angle)
 
         rotation_matrix = TwoDimArray([
             [math.cos(angle), -math.sin(angle)],
@@ -281,14 +284,14 @@ class TwoDimArray:
 
     def translate(
             self,
-            coords: tuple[int | float]
+            coords: tuple[int | float, int | float]
     ) -> TwoDimArray:
         """
         Translate an array a specified amount.
 
         Parameters
         ----------
-        coords: tuple[int | float]
+        coords: tuple[int | float, int | float]
             A tuple containing the amount for translation,
             in order (horizontal, vertical).
 
