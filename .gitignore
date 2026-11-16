@@ -11,3 +11,4 @@ temp/
 
 # specific file types
 .DS_Store
+outputs/*.svg

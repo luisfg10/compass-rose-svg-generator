@@ -159,7 +159,7 @@ class CompassRoseSVGGenerator:
             full_arms = initial_arm_metadata.copy()  # points to independent object
 
         # Solve for rotation value
-        rotation_degrees = 360 / n_arms
+        rotation_degrees = int(360 / n_arms)
 
         # Get arm halves
         left_half_ref = initial_arm_metadata[0]
@@ -338,25 +338,27 @@ class CompassRoseSVGGenerator:
         str
             The path of the saved SVG file.
         """
-        # solve for SVG len and width
-        length = rose_radius + int(2 * svg_padding)
-        width = rose_radius + int(2 * svg_padding)
+        # The rose spans from 0 to twice its radius, with padding on each side.
+        height = width = 2 * rose_radius + 2 * svg_padding
 
         # Fetch template file and format
         template_file = Template(
             Path(self.svg_template_file).read_text(encoding="utf-8")
         )
         svg = template_file.substitute(
-            length=length,
+            height=height,
             width=width,
             contents=contents,
         )
 
         # Write new file
-        output_dir = Path(output_dir)
+        output_dir = Path(self.outputs_dir)
         output_dir.mkdir(parents=True, exist_ok=True)  # create new dir if needed
 
         target = output_dir / output_filename
+        if target.suffix.lower() != ".svg":
+            target = target.with_suffix(".svg")
+
         if not overwrite:
             stem, suffix = target.stem, target.suffix
             counter = 1

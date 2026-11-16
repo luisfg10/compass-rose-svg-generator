@@ -1,8 +1,7 @@
-svg_template: |
-  <?xml version="1.0" encoding="UTF-8"?>
-  <svg xmlns="http://www.w3.org/2000/svg" 
-      width="$width" 
-      height="$height" 
-    >
-  $contents
-  </svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="$width"
+     height="$height"
+     viewBox="0 0 $width $height">
+$contents
+</svg>
