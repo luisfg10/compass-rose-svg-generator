@@ -263,6 +263,11 @@ class TwoDimArray:
         is rotated individually of the other rows, conserving its
         magnitude and position in the original matrix.
         """
+        if unit not in ["radians", "degrees"]:
+            raise ValueError(
+                f"Unrecognized unit: '{unit}'"
+            )
+
         import math  # lazy import just for this module
 
         if unit == "degrees":  # convert from degrees to radians

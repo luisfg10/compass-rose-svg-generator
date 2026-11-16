@@ -1,3 +1,7 @@
+from pathlib import Path
+from string import Template
+
+from config import SVG_TEMPLATE_FILE, SVG_OUTPUT_FILENAME, OUTPUTS_DIR
 from src.linear_algebra import TwoDimArray
 
 
@@ -11,14 +15,33 @@ class CompassRoseSVGGenerator:
     -----
     TODO: Would be nice to generalize for n levels of arm geometry
     without explicitly coding for level parameters.
-    TODO: Increase level of flexibility with the generated shapes:
-    allow user to specify how many arms to generate for first level
-    (normally it's 4, for N-S-W-E) but there's no reason this can't
-    change.
     """
-    def __init__(self) -> None:
-        """Initialize an instance of the CompassRoseSVGGenerator class."""
-        
+    def __init__(
+            self,
+            svg_template_file: str = SVG_TEMPLATE_FILE,
+            outputs_dir: str = OUTPUTS_DIR
+    ) -> None:
+        """
+        Initialize an instance of the CompassRoseSVGGenerator class.
+
+        Parameters
+        ----------
+        svg_template_file: str
+            The path location inside the project with the SVG template
+            file. Outputs take this as reference to format the dynamically-
+            generated compass rose SVG.
+        outputs_dir: str
+            The path inside the project to save new generated SVGs to.
+        """
+        for param in [svg_template_file, outputs_dir]:
+            if not isinstance(param, str):
+                raise ValueError(
+                    f"Invalid value for parameter `{param}`. "
+                    "Expected str."
+                )
+
+        self.svg_template_file = svg_template_file
+        self.outputs_dir = outputs_dir
 
     @staticmethod
     def compute_1st_level_base_arm(
@@ -145,13 +168,13 @@ class CompassRoseSVGGenerator:
         # Build new arms iteratively
         for turn in range(rotation_degrees, 360, rotation_degrees):  # start, stop, step
             # Append new left
-            new_left_half_geom = left_half_ref["geom"].rotate(turn)
+            new_left_half_geom = left_half_ref["geom"].rotate(turn, unit="degrees")
             full_arms.append({
                 "geom": new_left_half_geom,
                 "fill": left_half_ref["fill"]
             })
             # Append new right
-            new_right_half_geom = right_half_ref["geom"].rotate(turn)
+            new_right_half_geom = right_half_ref["geom"].rotate(turn, unit="degrees")
             full_arms.append({
                 "geom": new_right_half_geom,
                 "fill": right_half_ref["fill"]
@@ -163,6 +186,7 @@ class CompassRoseSVGGenerator:
     def recenter_rose(
         rose_radius: int | float,
         rose_metadata: list[dict[str, TwoDimArray | str | None]],
+        padding: int = 0,
         inplace: bool = False
     ) -> list[dict[str, TwoDimArray | str | None]]:
         """
@@ -183,6 +207,10 @@ class CompassRoseSVGGenerator:
             The metadata for the rose arms. Does not check how many arms are
             there and assumes they have expected structure. See
             `compute_1st_level_base_arm` for more context on expected schema.
+        padding: int = 0
+            Number of fill pixels on each border of the SVG. Assumes it's applied
+            uniformly across all 4 borders of the image.
+            Changes the new calculated center.
         inplace: bool = False
         """
         # Init return object
@@ -191,7 +219,7 @@ class CompassRoseSVGGenerator:
         else:
             new_metadata = rose_metadata.copy()  # points to independent object
 
-        new_center = (rose_radius, rose_radius)
+        new_center = (rose_radius + padding, rose_radius + padding)
         for element in new_metadata:
             element["geom"] = element["geom"].translate(new_center)
 
@@ -270,12 +298,74 @@ class CompassRoseSVGGenerator:
             )
         return polygon_code
 
-    def write_svg() -> None:
+    def write_svg(
+            self,
+            *,
+            contents: str,
+            rose_radius: int | float,
+            svg_padding: int,
+            output_filename: str,
+            overwrite: bool = False
+    ) -> str:
         """
-        Assumes placeholders are saved with $placeholder, not {placeholder}
-        in order to avoid collisions with native SVG/CSS syntax. 
+        Fetches the file from self.svg_template_file, formats
+        it with the rose's contents, and saves results to a new file
+        in the self.outputs_dir space.
+
+        Assumes three placeholders in the template file: $width, $height,
+        $contents. Placeholders are saved with $placeholder, not {placeholder}
+        in order to avoid collisions with native SVG/CSS syntax.
+
+        Parameters
+        ----------
+        contents: str
+            String containing the contents for the SVG. In this case, the
+            polygons for the rose.
+        rose_radius: int
+            The length of a single rose arm.
+        padding: int
+            How many pixels to use to fill each border. Assumes they're
+            applied uniformly on each border of the image.
+        output_filename: str
+            The name of the file to save the output as.
+        overwrite: bool = False
+            Whether to save new files over existing ones or not.
+            If save to false, appends _{integer} to the name to avoid
+            collissions.
+
+        Returns
+        -------
+        str
+            The path of the saved SVG file.
         """
-        raise NotImplementedError
+        # solve for SVG len and width
+        length = rose_radius + int(2 * svg_padding)
+        width = rose_radius + int(2 * svg_padding)
+
+        # Fetch template file and format
+        template_file = Template(
+            Path(self.svg_template_file).read_text(encoding="utf-8")
+        )
+        svg = template_file.substitute(
+            length=length,
+            width=width,
+            contents=contents,
+        )
+
+        # Write new file
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)  # create new dir if needed
+
+        target = output_dir / output_filename
+        if not overwrite:
+            stem, suffix = target.stem, target.suffix
+            counter = 1
+            while target.exists():  # while the filename already exists
+                target = output_dir / f"{stem}_{counter}{suffix}"
+                counter += 1
+
+        target.write_text(svg, encoding="utf-8")
+        return target
 
     def run(
             self,
@@ -285,7 +375,11 @@ class CompassRoseSVGGenerator:
             main_fill_color: str = "#E0A84A",
             secondary_fill_color: str | None = None,
             stroke_color: str = "#E0A84A",
-            stroke_width: int = 3
+            stroke_width: int = 3,
+            n_arms_first_level: int = 4,
+            padding: int = 1,
+            output_filename: str = SVG_OUTPUT_FILENAME,
+            overwrite_existing_file: bool = False
     ) -> None:
         """
         Main callable for creating and saving an SVG file with
@@ -315,6 +409,17 @@ class CompassRoseSVGGenerator:
             The color to use when outlining the rose's shape.
         stroke_width: int
             The thickness of the lines drawing the rose's shape.
+        n_arms_first_level: int
+            The number of rose arms to display in the first level of the rose.
+            Standard value is 4, but there's no reason it can't be different.
+        padding: int = 1
+            Number of empty pixels to use as image border.
+        output_filename: str
+            The name of the file to save the output SVG Aas.
+        overwrite: bool = False
+            Whether to save new files over existing ones or not.
+            If save to false, appends _{integer} to the output filename to avoid
+            collissions.
         """
         # -----------------------------------------------------------------------
         # Input consistency checks
@@ -335,6 +440,10 @@ class CompassRoseSVGGenerator:
             raise ValueError(
                 "Invalid value provided for `stroke_width`."
             )
+        if not isinstance(n_arms_first_level, int) or n_arms_first_level <= 0:
+            raise ValueError(
+                "Invalid value provided for `n_arms_first_level`."
+            )
         if (
             not isinstance(secondary_fill_color, str)
             or len(secondary_fill_color) == 0
@@ -353,7 +462,7 @@ class CompassRoseSVGGenerator:
         # Build rose's first level
 
         # Get metadata for 'N' arm
-        first_arm_metadata = self.compute_1st_level_base_arm(
+        first_arm_metadata: list[dict] = self.compute_1st_level_base_arm(
             l=rose_radius,
             h=rose_arm_h,
             w=rose_arm_w,
@@ -362,15 +471,32 @@ class CompassRoseSVGGenerator:
         )
 
         # Use rotation to build the other three arms
-        full_rose_metadata = self.build_full_rose_level(
+        full_rose_metadata: list[dict] = self.build_full_rose_level(
             first_arm_metadata,
-            n_arms=4
+            n_arms=n_arms_first_level
         )
 
         # Re-center arm coordinates for SVG
-        recentered_metadata = self.recenter_rose(
+        recentered_metadata: list[dict] = self.recenter_rose(
             rose_radius=rose_radius,
-            rose_metadata=full_rose_metadata
+            rose_metadata=full_rose_metadata,
+            padding=padding
         )
 
         # Convert metadata into SVG-ready code
+        rose_svg_code: str = self.translate_rose_metadata_to_svg(
+            recentered_metadata,
+            stroke_color=stroke_color,
+            stroke_width=stroke_width
+        )
+
+        # Write file
+        saved_filename = self.write_svg(
+            contents=rose_svg_code,
+            rose_radius=rose_radius,
+            svg_padding=padding,
+            output_filename=output_filename,
+            overwrite=overwrite_existing_file
+        )
+
+        print(f"File saved successfully to {saved_filename}.")
