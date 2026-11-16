@@ -14,6 +14,9 @@ class CompassRoseSVGGenerator:
 
     Notes
     -----
+    TODO: Allow to customize background, similar to secondary color.
+    Leave transparent by default, and if provided use to build
+    background.
     TODO: Allow for building a second rose blades level on top
     of the first one.
     TODO: Would be nice to generalize for n levels of blade geometry

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="240"
+     height="240"
+     viewBox="0 0 240 240">
+<polygon
+            points="120,120 139.28258237413692,139.28258237413692 120,230"
+            fill="white"
+            stroke="black"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120,120 100.71741762586308,139.28258237413692 120,230"
+            fill="black"
+            stroke="black"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 127.0579,93.65950000000001 215.2628,65.0"
+            fill="white"
+            stroke="black"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 146.3405,127.0579 215.2628,65.0"
+            fill="black"
+            stroke="black"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 93.65950000000001,127.0579 24.7372,65.0"
+            fill="white"
+            stroke="black"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 112.9421,93.65950000000001 24.7372,65.0"
+            fill="black"
+            stroke="black"
+            stroke-width="1" 
+        />
+        
+</svg>

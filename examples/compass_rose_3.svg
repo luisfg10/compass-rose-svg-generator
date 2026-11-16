@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="240"
+     height="240"
+     viewBox="0 0 240 240">
+<polygon
+            points="120,120 134.14824313562377,191.1280214599198 120,230"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120,120 105.85175686437623,191.1280214599198 120,230"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 160.2908,180.2994 162.0952,221.6267"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 134.1482,191.128 162.0952,221.6267"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 180.2994,160.2908 197.7817,197.7817"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 160.2908,180.2994 197.7817,197.7817"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 191.128,134.1482 221.6267,162.0952"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 180.2994,160.2908 221.6267,162.0952"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 191.128,105.8518 230.0,120.0"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 191.128,134.1482 230.0,120.0"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 180.2994,79.70920000000001 221.6267,77.9048"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 191.128,105.8518 221.6267,77.9048"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 160.2908,59.7006 197.7817,42.2183"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 180.2994,79.70920000000001 197.7817,42.2183"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 134.1482,48.872 162.0952,18.3733"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 160.2908,59.7006 162.0952,18.3733"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 105.8518,48.872 120.0,10.0"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 134.1482,48.872 120.0,10.0"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 79.70920000000001,59.7006 77.9048,18.3733"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 105.8518,48.872 77.9048,18.3733"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 59.7006,79.70920000000001 42.2183,42.2183"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 79.70920000000001,59.7006 42.2183,42.2183"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 48.872,105.8518 18.3733,77.9048"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 59.7006,79.70920000000001 18.3733,77.9048"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 48.872,134.1482 10.0,120.0"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 48.872,105.8518 10.0,120.0"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 59.7006,160.2908 18.3733,162.0952"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 48.872,134.1482 18.3733,162.0952"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 79.70920000000001,180.2994 42.2183,197.7817"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 59.7006,160.2908 42.2183,197.7817"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 105.8518,191.128 77.9048,221.6267"
+            fill="red"
+            stroke="red"
+            stroke-width="1" 
+        />
+        <polygon
+            points="120.0,120.0 79.70920000000001,180.2994 77.9048,221.6267"
+            fill="black"
+            stroke="red"
+            stroke-width="1" 
+        />
+        
+</svg>
