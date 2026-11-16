@@ -5,13 +5,13 @@ from config import (
     ROSE_ARM_W
 )
 from src.linear_algebra import TwoDimArray
-from src.svg.base_formatter import SVGTemplateFormatter
 
 
-class CompassRoseSVGGenerator(SVGTemplateFormatter):
+class CompassRoseSVGGenerator:
     """
     Utility class containing the core logic for drawing compass
-    rose SVGs based on input parameters.
+    rose SVGs based on input parameters, as well as fetching and
+    formatting SVG files, and creating new ones.
 
     Notes
     -----
@@ -201,7 +201,25 @@ class CompassRoseSVGGenerator(SVGTemplateFormatter):
         for element in new_metadata:
             element["geom"] = element["geom"].translate(new_center)
 
-        return new_metadata            
+        return new_metadata
+
+    @staticmethod
+    def translate_rose_metadata_to_svg(
+        rose_metadata: list[dict[str, TwoDimArray | str | None]] 
+    ) -> str:
+        """
+        Translates a list of rose metadata into a string ready to be
+        formatted into an SVG template.
+        Assumes rose metadata is provided as exemplified in
+        `compute_1st_level_base_arm`.
+        """
+
+    def write_svg() -> None:
+        """
+        Assumes placeholders are saved with $placeholder, not {placeholder}
+        in order to avoid collisions with native SVG/CSS syntax. 
+        """
+        raise NotImplementedError
 
     def run(
             self,
